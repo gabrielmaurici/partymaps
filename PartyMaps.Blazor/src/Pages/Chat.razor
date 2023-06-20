@@ -1,0 +1,348 @@
+@page "/chat"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PartyMaps.Blazor.Pages.Data
+
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@implements IAsyncDisposable
+
+<PageTitle>Chat PartyMaps</PageTitle>
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <div class="chat-container">
+                <div class="messages-content">
+                    <div class="messages">
+                        @foreach (var message in messages)
+                        {
+                               @if (message.IsNotifyUserEntering) {
+                                    <div class="userEntering-container">
+                                        <div class="userEntering">
+                                            @message.User entrou no chat.
+                                        </div>
+                                    </div>    
+                                }
+                                else 
+                                {
+                                    <div class="message-container">
+                                        <div class="user-picture">
+                                            <img style="width: 30px; border-radius: 100%;" src="@message.picture">
+                                        </div>
+                                        <div class="message-box @message.Css">
+                                            <div class="user-message">
+                                                @message.User
+                                            </div>
+                                            <div class="message">
+                                                @message.Message
+                                            </div>
+                                            <div class="date-message">
+                                                @message.SendDate
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    @if (showNotifyTyping) 
+                    {
+                        if (usersTyping.Count == 1) 
+                        {
+                            <p class="user-typing">@usersTyping.FirstOrDefault()!.User está digitando...</p>
+                        } 
+                        else if (usersTyping.Count >= 2) {
+                            var usersTypingMessage = "";
+
+                            for (var i = usersTyping.Count - 2; i < usersTyping.Count; i++)
+                            {
+                                usersTypingMessage += $"{usersTyping[i].User}, ";
+                            }
+
+                            var usersNotifyTypingMessage = usersTypingMessage.Substring(0, usersTypingMessage.Length -2);
+
+                            if (usersTyping.Count == 2) {
+                                <p class="user-typing">@usersNotifyTypingMessage estão digitando...</p>
+                            }
+                            else 
+                            {
+                                var totalUsersTyping = usersTyping.Count - 2;
+                                <p class="user-typing">@usersNotifyTypingMessage e mais @totalUsersTyping pessoas estão digitando...</p>
+                            }
+                        }
+                    }
+
+                    <hr>
+                    <div class="write-container">
+                        <form @onsubmit="@SendChat">
+                            <input class="input-message" placeholder="Digite sua mensagem" @bind="messageInput" @onkeypress="NotifyTyping" size="50">
+                        </form>
+                        <button class="btn-send-message" @onclick="SendChat" disabled="@(!IsConnected)">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <p>Para usar o Chat faça log in na sua conta Google!</p>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+<style>
+    .chat-container {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        width: 100%;
+        height: 86vh;
+    }
+
+    .messages-content {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column-reverse;
+        overflow-y: scroll;
+        width: 100%;
+        height: 780px;
+    }
+
+    .messages {
+        width: 100%;
+    }
+
+    .btn-send-message {
+        margin-left: 5px;
+        border-style: none;
+        border-radius: 5px;
+        border: 1px solid;
+        background-color: #31951dd4;
+        color: #f9fafbf7;
+        height: 40px;
+        font-size: 12px;
+    }
+
+    .message-container {
+        margin: 15px;
+        padding: 5px;
+        display: flex;
+    }
+
+    .write-container {
+        @* margin: 15px;
+        padding: 5px; *@
+        display: flex;
+        align-items: center;
+    }
+
+    .userEntering-container {
+        display: flex;
+        justify-content: center;
+        margin: 10px;
+    }
+
+    .userEntering {
+        display: flex;
+        justify-content: center;
+
+        border: 1px solid #918f8f;
+        border-radius: 5px;
+
+        padding: 2px 10px;
+
+        font-size: 13px;
+        color: #918f8f;
+    }
+
+    .message-box {
+        background-color: #1c3fcdb0;
+        border-radius: 10px;
+        padding: 5px 15px;
+        color: #f9fafbf7;
+    }
+
+    .message-box-send {
+        background-color: #31951dd4;
+    }
+
+    .message-box-receive {
+        background-color: #1c3fcdb0;
+    }
+
+    .user-picture {
+        display: flex;
+        align-items: center;
+        margin-right: 10px;
+    }
+
+    .user-message {
+        font-size: 12px;
+    }
+
+    .message {
+        font-size: 15px;
+    }
+
+    .date-message {
+        display: flex;
+        justify-content: flex-end;
+        font-size: 10px;
+    }
+
+    .user-typing {
+        color: #918f8f;
+        font-size: 12px;
+    }
+
+    .input-message {
+        border: 1px solid #918f8f;
+        color: #918f8f;
+        border-radius: 5px;
+        padding: 5px;
+    }
+</style>
+
+
+@code {
+    private HubConnection? hubConnection;
+    private List<UserChat> messages = new List<UserChat>();
+    private List<UserTyping> usersTyping = new List<UserTyping>();
+    private string? userName;
+    private string? messageInput;
+    private string? picture;
+    private string? userCod;
+    private DateTime lasCantNotifyTyping;
+    private DateTime lastShowNotifyTyping;
+    private bool canNotifyTyping = true;
+    private bool showNotifyTyping = false;
+
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUserInfo();
+
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("http://192.168.1.106:5000/chathub")
+            .Build()
+        ;
+
+        hubConnection.On<string, string, string, string, DateTime>("PartyMapsChat", (user, message, picture, userCod, sendDate) =>
+        {
+            var userSend = this.userCod!.Equals(userCod);
+            var css = userSend ? "message-box-send" : "message-box-receive";
+            user = userSend ? "Você" : user; 
+
+            var userChat = new UserChat(user, message, picture, css, sendDate, false);
+            messages.Add(userChat);
+
+            StateHasChanged();
+        });
+
+        hubConnection.On<string, string>("NotifyTyping", (user, userCod) =>
+        {
+            usersTyping.RemoveAll(x => x.UserCod.Equals(userCod));
+
+            if (!this.userCod!.Equals(userCod)) 
+            {
+                usersTyping.Add(new UserTyping(
+                    user, 
+                    userCod
+                ));
+                showNotifyTyping = true;
+            } 
+
+            lastShowNotifyTyping = DateTime.Now;
+
+            Task.Delay(3000).ContinueWith(_ =>
+            {
+                if ((DateTime.Now - lastShowNotifyTyping).TotalSeconds >= 3)
+                {
+                    showNotifyTyping = false;
+                    usersTyping.Clear();
+                    StateHasChanged();
+                }
+            });
+
+            StateHasChanged();
+        });
+
+        hubConnection.On<string, string>("UserEnteringChat", (user, userCod) => {
+            var userSend = this.userCod!.Equals(userCod);
+            user = userSend ? "Você" : user; 
+
+            var userEnteringChat = new UserChat(user, "", "", "", DateTime.Now, true);
+            messages.Add(userEnteringChat);
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+
+        await NotifyUserEnteringChat();
+    }
+
+    private async Task NotifyUserEnteringChat()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("UserEnteringChat", this.userName, this.userCod);
+        }
+    }
+
+    private async Task SendChat()
+    {
+        if (hubConnection is not null && !string.IsNullOrEmpty(this.messageInput))
+        {
+            await hubConnection.SendAsync("PartyMapsChat", this.userName, this.messageInput, this.picture, this.userCod, DateTime.Now);
+            messageInput = "";
+        }
+    }
+
+    private async Task NotifyTyping()
+    {
+        if (canNotifyTyping && hubConnection is not null)
+        {
+            await hubConnection.SendAsync("NotifyTyping", this.userName, this.userCod);
+            lasCantNotifyTyping = DateTime.Now;
+            canNotifyTyping = false;
+
+            await Task.Delay(5000).ContinueWith(_ =>
+            {
+                if ((DateTime.Now - lasCantNotifyTyping).TotalSeconds >= 5)
+                {
+                    canNotifyTyping = true;
+                }
+            });
+        }
+    }
+
+    private async Task GetUserInfo() {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.Identity?.Name;
+        
+        var pictureClaims = user.FindFirst(x => x.Type == "picture");
+
+        if (pictureClaims != null) picture = pictureClaims.Value;
+
+        var userCodClaims = user?.FindFirst(x => x.Type == "sub");
+
+        if (userCodClaims != null) userCod = userCodClaims.Value;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+

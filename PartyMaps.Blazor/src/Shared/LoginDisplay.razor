@@ -1,0 +1,32 @@
+@inject NavigationManager Navigation
+
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <button class="nav-link btn btn-link" @onclick="BeginLogOut">Log out</button>
+            
+            @{
+                var user = context.User?.Identity?.Name;
+                var pictureClaims = context.User?.FindFirst(x => x.Type == "picture");
+
+                var picture = "";
+                if (pictureClaims != null) picture = pictureClaims.Value;
+            }
+
+            <text>Olá, @user</text>
+            <img style="width: 30px; border-radius: 100%; margin: 0 5px" src="@picture" alt="imagem perfil">
+
+        </Authorized>
+        <NotAuthorized>
+            <a href="authentication/login">Log in</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+
+@code{
+    public void BeginLogOut()
+    {
+        Navigation.NavigateToLogout("authentication/logout");
+    }
+}

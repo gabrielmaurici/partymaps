@@ -1,8 +1,7 @@
-@inject NavigationManager Navigation
-@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Microsoft.Extensions.Options
-
+@inject NavigationManager Navigation
 @inject IOptionsSnapshot<RemoteAuthenticationOptions<ApiAuthorizationProviderOptions>> Options
+
 
 @code {
     protected override void OnInitialized()

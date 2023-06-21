@@ -1,0 +1,9 @@
+{
+  "Local": {
+    "Authority": "https://accounts.google.com/",
+    "ClientId": "649575633025-pltlppv6mh2onggkumms6n44iul9umsa.apps.googleusercontent.com",
+    "PostLogoutRedirectUri": "http://localhost:8000/authentication/logout-callback",
+    "RedirectUri": "http://localhost:8000/authentication/login-callback",
+    "ResponseType": "id_token"
+  }
+}

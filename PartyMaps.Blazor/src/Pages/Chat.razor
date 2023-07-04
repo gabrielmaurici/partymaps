@@ -233,8 +233,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("teste " + IdEvent);
-
         await GetUserInfo();
 
 
@@ -245,7 +243,6 @@
 
         hubConnection.On<string, string, string, string, DateTime, int>("PartyMapsChat", (user, message, picture, userCod, sendDate, idEvent) =>
         {
-            Console.WriteLine(idEvent + " " + IdEvent);
             if (idEvent != Convert.ToInt32(IdEvent)) return;
 
             var userSend = this.userCod!.Equals(userCod);

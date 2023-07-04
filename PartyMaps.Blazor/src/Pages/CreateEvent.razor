@@ -102,7 +102,6 @@
 
         var user = authState.User;
         var userCodClaims = user?.FindFirst(x => x.Type == "sub");
-        Console.WriteLine(userCodClaims!.Value);
         if (userCodClaims == null) throw new ArgumentException("Erro ao obter o Id do usuário autenticado");
 
         return userCodClaims!.Value;

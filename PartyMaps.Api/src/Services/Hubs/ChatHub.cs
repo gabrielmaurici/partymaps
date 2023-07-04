@@ -6,7 +6,6 @@ namespace PartyMaps.Api.src.Services.Hubs
     {
         public async Task PartyMapsChat(string user, string message, string picture, string userCod, DateTime sendDate, int idEvent)
         {
-            Console.WriteLine(idEvent);
             await Clients.All.SendAsync("PartyMapsChat", user, message, picture, userCod, sendDate, idEvent);
         }
 

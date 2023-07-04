@@ -1,4 +1,4 @@
-@page "/chat"
+@page "/chat/{idEvent}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using PartyMaps.Blazor.Pages.Data
@@ -18,32 +18,32 @@
                     <div class="messages">
                         @foreach (var message in messages)
                         {
-                               @if (message.IsNotifyUserEntering) {
-                                    <div class="userEntering-container">
-                                        <div class="userEntering">
-                                            @message.User entrou no chat.
+                            @if (message.IsNotifyUserEntering) {
+                                <div class="userEntering-container">
+                                    <div class="userEntering">
+                                        @message.User entrou no chat.
+                                    </div>
+                                </div>    
+                            }
+                            else 
+                            {
+                                <div class="message-container">
+                                    <div class="user-picture">
+                                        <img style="width: 30px; border-radius: 100%;" src="@message.picture">
+                                    </div>
+                                    <div class="message-box @message.Css">
+                                        <div class="user-message">
+                                            @message.User
                                         </div>
-                                    </div>    
-                                }
-                                else 
-                                {
-                                    <div class="message-container">
-                                        <div class="user-picture">
-                                            <img style="width: 30px; border-radius: 100%;" src="@message.picture">
+                                        <div class="message">
+                                            @message.Message
                                         </div>
-                                        <div class="message-box @message.Css">
-                                            <div class="user-message">
-                                                @message.User
-                                            </div>
-                                            <div class="message">
-                                                @message.Message
-                                            </div>
-                                            <div class="date-message">
-                                                @message.SendDate
-                                            </div>
+                                        <div class="date-message">
+                                            @message.SendDate
                                         </div>
                                     </div>
-                                }
+                                </div>
+                            }
                         }
                     </div>
                 </div>
@@ -215,6 +215,8 @@
 
 
 @code {
+    [Parameter] public string IdEvent { get; set; } = null!;
+
     private HubConnection? hubConnection;
     private List<UserChat> messages = new List<UserChat>();
     private List<UserTyping> usersTyping = new List<UserTyping>();
@@ -231,16 +233,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("teste " + IdEvent);
+
         await GetUserInfo();
 
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("http://192.168.1.106:5000/chathub")
+            .WithUrl("http://localhost:5000/chathub")
             .Build()
         ;
 
-        hubConnection.On<string, string, string, string, DateTime>("PartyMapsChat", (user, message, picture, userCod, sendDate) =>
+        hubConnection.On<string, string, string, string, DateTime, int>("PartyMapsChat", (user, message, picture, userCod, sendDate, idEvent) =>
         {
+            Console.WriteLine(idEvent + " " + IdEvent);
+            if (idEvent != Convert.ToInt32(IdEvent)) return;
+
             var userSend = this.userCod!.Equals(userCod);
             var css = userSend ? "message-box-send" : "message-box-receive";
             user = userSend ? "Você" : user; 
@@ -251,8 +258,10 @@
             StateHasChanged();
         });
 
-        hubConnection.On<string, string>("NotifyTyping", (user, userCod) =>
+        hubConnection.On<string, string, int>("NotifyTyping", (user, userCod, idEvent) =>
         {
+            if (idEvent != Convert.ToInt32(IdEvent)) return;
+
             usersTyping.RemoveAll(x => x.UserCod.Equals(userCod));
 
             if (!this.userCod!.Equals(userCod)) 
@@ -279,7 +288,9 @@
             StateHasChanged();
         });
 
-        hubConnection.On<string, string>("UserEnteringChat", (user, userCod) => {
+        hubConnection.On<string, string, int>("UserEnteringChat", (user, userCod, idEvent) => {
+            if (idEvent != Convert.ToInt32(IdEvent)) return;
+            
             var userSend = this.userCod!.Equals(userCod);
             user = userSend ? "Você" : user; 
 
@@ -297,7 +308,7 @@
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("UserEnteringChat", this.userName, this.userCod);
+            await hubConnection.SendAsync("UserEnteringChat", this.userName, this.userCod, Convert.ToInt32(IdEvent));
         }
     }
 
@@ -305,7 +316,7 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(this.messageInput))
         {
-            await hubConnection.SendAsync("PartyMapsChat", this.userName, this.messageInput, this.picture, this.userCod, DateTime.Now);
+            await hubConnection.SendAsync("PartyMapsChat", this.userName, this.messageInput, this.picture, this.userCod, DateTime.Now, Convert.ToInt32(IdEvent));
             messageInput = "";
         }
     }
@@ -314,7 +325,7 @@
     {
         if (canNotifyTyping && hubConnection is not null)
         {
-            await hubConnection.SendAsync("NotifyTyping", this.userName, this.userCod);
+            await hubConnection.SendAsync("NotifyTyping", this.userName, this.userCod, Convert.ToInt32(IdEvent));
             lasCantNotifyTyping = DateTime.Now;
             canNotifyTyping = false;
 
@@ -328,18 +339,17 @@
         }
     }
 
-    private async Task GetUserInfo() {
+    private async Task GetUserInfo()
+    {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
 
+        var user = authState.User;
         userName = user.Identity?.Name;
         
         var pictureClaims = user.FindFirst(x => x.Type == "picture");
-
         if (pictureClaims != null) picture = pictureClaims.Value;
 
         var userCodClaims = user?.FindFirst(x => x.Type == "sub");
-
         if (userCodClaims != null) userCod = userCodClaims.Value;
     }
 

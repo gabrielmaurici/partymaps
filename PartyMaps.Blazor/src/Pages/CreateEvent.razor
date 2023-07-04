@@ -1,0 +1,110 @@
+@page "/create-event"
+
+@inject NavigationManager Navigation
+@inject src.Services.IntegrationPartyMapsApiService _integrationPartyMapsApiService;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <div class="form-container">
+                <form @onsubmit="Create">
+                    <div class="form-group">
+                        <label for="eventName" class="form-label">Nome do Evento:</label>
+                        <input type="text" id="eventName" class="form-input" @bind="@EventName" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="description" class="form-label">Descrição:</label>
+                        <textarea id="description" class="form-input" @bind="@Description" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="value" class="form-label">Valor:</label>
+                        <input type="number" id="value" class="form-input" @bind="@EventValue" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="eventDate" class="form-label">Data do Evento:</label>
+                        <input type="date" id="eventDate" class="form-input" @bind="@EventDate" required />
+                    </div>
+                    <button type="submit" class="form-button">Enviar</button>
+                </form>
+            </div>
+
+        </Authorized>
+        <NotAuthorized>
+            <p>Para criar um evento faça log in na sua conta Google!</p>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+<style>
+    .form-container {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  
+    .form-group {
+      margin-bottom: 20px;
+    }
+  
+    .form-label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+  
+    .form-input {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  
+    .form-button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  
+    .form-button:hover {
+      background-color: #45a049;
+    }
+</style>
+
+
+@code {
+
+    protected override async void OnInitialized()
+    {
+        IdCreator = await GetIdCreator();
+    }
+
+    public string? IdCreator { get; set; }
+    public string? EventName { get; set; }
+    public string? Description { get; set; }
+    public decimal EventValue { get; set; }
+    public DateTime EventDate { get; set; }
+
+
+    public async Task Create()
+    {
+        await _integrationPartyMapsApiService.CreateEvent(IdCreator, EventName, Description, EventValue, EventDate);
+        Navigation.NavigateTo("event-list");
+    }
+
+    private async Task<string> GetIdCreator()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var user = authState.User;
+        var userCodClaims = user?.FindFirst(x => x.Type == "sub");
+        Console.WriteLine(userCodClaims!.Value);
+        if (userCodClaims == null) throw new ArgumentException("Erro ao obter o Id do usuário autenticado");
+
+        return userCodClaims!.Value;
+    }
+}

@@ -1,0 +1,76 @@
+@page "/event-list"
+
+@inject NavigationManager Navigation
+@inject src.Services.IntegrationPartyMapsApiService _integrationPartyMapsApiService;
+@using src.Models.Dtos
+
+<div>
+    <ul class="event-list">
+        @foreach (var eventParty in ListEvents)
+        {
+            <li class="event-item">
+                <div class="event-info">
+                    <h3>@eventParty.Name</h3>
+                    <p>@eventParty.Description</p>
+                    <p>Valor: @eventParty.EventValue</p>
+                    <p>Data do Evento: @eventParty.EventDate</p>
+                </div>
+                <button class="chat-button" @onclick="() => RedirectToChat(eventParty.Id)">Chat</button>
+            </li>
+        }
+    </ul>
+</div>
+
+
+<style>
+    .event-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .event-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .event-item .event-info {
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    .event-item .event-info h3 {
+        margin: 0;
+    }
+
+    .event-item .event-info p {
+        margin: 0;
+        color: #888;
+    }
+
+    .event-item .chat-button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        cursor: pointer;
+    }
+</style>
+
+@code {
+
+    protected override async void OnInitialized()
+    {
+        ListEvents = await _integrationPartyMapsApiService.GetEvents();
+        StateHasChanged();
+    }
+
+    public List<ResponseEventDto> ListEvents { get; set; } = new List<ResponseEventDto>();
+
+    public void RedirectToChat(int eventoId)
+    {
+        Navigation.NavigateTo($"/chat/{eventoId}");
+    }
+}

@@ -1,11 +1,22 @@
-using System.Linq;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 using PartyMaps.Api.src.Services.Hubs;
+using src.Data.Context;
+using src.Data.Repositories;
+using src.Interfaces.Repositories;
+using src.Interfaces.Services;
+using src.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbContextConnection")));
+
+
+
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IEventService, EventService>();
+
 
 builder.Services.AddSignalR();
 builder.Services.AddResponseCompression(opts =>
@@ -25,7 +36,6 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         policy =>
         {
-            // policy.WithOrigins("https://incurro.serveo.net").AllowAnyHeader().AllowAnyMethod();
             policy.AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader();
@@ -38,9 +48,9 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-}
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
 app.MapHub<ChatHub>("/chathub");
 

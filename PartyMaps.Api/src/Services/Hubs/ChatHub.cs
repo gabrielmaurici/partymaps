@@ -1,12 +1,22 @@
 using Microsoft.AspNetCore.SignalR;
+using src.Domain.Dto;
+using src.Domain.Services;
 
 namespace PartyMaps.Api.src.Services.Hubs
 {
     public class ChatHub : Hub
     {
-        public async Task PartyMapsChat(string user, string message, string picture, string userCod, DateTime sendDate, int idEvent)
+        private readonly IChatService _chatService;
+
+        public ChatHub(IChatService chatService)
         {
-            await Clients.All.SendAsync("PartyMapsChat", user, message, picture, userCod, sendDate, idEvent);
+            _chatService = chatService;
+        }
+
+        public async Task PartyMapsChat(ChatDto model)
+        {
+            await _chatService.Save(model);
+            await Clients.All.SendAsync("PartyMapsChat", model);
         }
 
         public async Task NotifyTyping(string user, string userCod, int idEvent)

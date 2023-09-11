@@ -2,6 +2,7 @@
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using PartyMaps.Blazor.Pages.Data
+@using src.Pages.Data.Dto
 
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -29,7 +30,7 @@
                             {
                                 <div class="message-container">
                                     <div class="user-picture">
-                                        <img style="width: 30px; border-radius: 100%;" src="@message.picture">
+                                        <img style="width: 30px; border-radius: 100%;" src="@message.Picture">
                                     </div>
                                     <div class="message-box @message.Css">
                                         <div class="user-message">
@@ -241,15 +242,15 @@
             .Build()
         ;
 
-        hubConnection.On<string, string, string, string, DateTime, int>("PartyMapsChat", (user, message, picture, userCod, sendDate, idEvent) =>
+        hubConnection.On<ChatDto>("PartyMapsChat", (ChatDto model) =>
         {
-            if (idEvent != Convert.ToInt32(IdEvent)) return;
+            if (model.IdEvent != Convert.ToInt32(IdEvent)) return;
 
-            var userSend = this.userCod!.Equals(userCod);
+            var userSend = this.userCod!.Equals(model.UserCod);
             var css = userSend ? "message-box-send" : "message-box-receive";
-            user = userSend ? "Você" : user; 
+            var user = userSend ? "Você" : model.User; 
 
-            var userChat = new UserChat(user, message, picture, css, sendDate, false);
+            var userChat = new UserChat(user, model?.Message, model?.Picture, css, model!.SendDate, false);
             messages.Add(userChat);
 
             StateHasChanged();
@@ -313,7 +314,13 @@
     {
         if (hubConnection is not null && !string.IsNullOrEmpty(this.messageInput))
         {
-            await hubConnection.SendAsync("PartyMapsChat", this.userName, this.messageInput, this.picture, this.userCod, DateTime.Now, Convert.ToInt32(IdEvent));
+            await hubConnection.SendAsync("PartyMapsChat", 
+                new ChatDto(
+                    this.userName!, this.messageInput,
+                    this.picture, this.userCod!,
+                    DateTime.Now, Convert.ToInt32(IdEvent)
+                )
+            );
             messageInput = "";
         }
     }

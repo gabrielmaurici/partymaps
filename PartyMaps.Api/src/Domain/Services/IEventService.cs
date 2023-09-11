@@ -1,7 +1,7 @@
-using PartyMaps.Api.src.Data.Dtos;
-using src.Data.Entities;
+using src.Domain.Dto;
+using src.Domain.Entities;
 
-namespace src.Interfaces.Services
+namespace src.Domain.Services
 {
     public interface IEventService
     {

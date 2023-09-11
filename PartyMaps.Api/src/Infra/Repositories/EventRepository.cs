@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using src.Data.Context;
-using src.Data.Entities;
-using src.Interfaces.Repositories;
+using src.Infra.Context;
+using src.Domain.Entities;
+using src.Domain.Repositories;
 
-namespace src.Data.Repositories
+namespace src.Infra.Repositories
 {
     public class EventRepository : IEventRepository
     {

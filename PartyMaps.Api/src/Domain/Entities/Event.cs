@@ -1,4 +1,4 @@
-namespace src.Data.Entities
+namespace src.Domain.Entities
 {
     public class Event
     {

@@ -1,14 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using src.Data.Entities;
+using src.Domain.Entities;
 
-namespace src.Data.Context
+namespace src.Infra.Context
 {
     public class AppDbContext : DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-
 
         public DbSet<Event> Events { get; set; } = null!;
     }

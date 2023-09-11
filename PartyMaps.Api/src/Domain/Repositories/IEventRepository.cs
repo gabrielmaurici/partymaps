@@ -1,6 +1,6 @@
-using src.Data.Entities;
+using src.Domain.Entities;
 
-namespace src.Interfaces.Repositories
+namespace src.Domain.Repositories
 {
     public interface IEventRepository
     {

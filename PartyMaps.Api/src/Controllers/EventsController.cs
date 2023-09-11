@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using PartyMaps.Api.src.Data.Dtos;
-using src.Interfaces.Services;
+using src.Domain.Dto;
+using src.Domain.Services;
 
 namespace PartyMaps.Api.src.Controllers;
 

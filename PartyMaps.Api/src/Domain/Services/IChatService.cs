@@ -6,5 +6,5 @@ public interface IChatService
 {
     Task Save(ChatDto model);
 
-    Task<ChatDto[]> Get();
+    ChatDto[] Get(int take, int limit);
 }

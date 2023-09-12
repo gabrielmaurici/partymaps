@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject src.Services.IntegrationPartyMapsApiService _integrationPartyMapsApiService;
 
 @implements IAsyncDisposable
 
@@ -231,13 +232,14 @@
     private DateTime lastShowNotifyTyping;
     private bool canNotifyTyping = true;
     private bool showNotifyTyping = false;
+    private int takeRequestMessages = 0;
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync()
     {
         await GetUserInfo();
-        PreencheMessageTeste();
+        await GetMessagesChat();
 
         hubConnection = new HubConnectionBuilder()
             .WithUrl("http://localhost:5000/chathub")
@@ -248,9 +250,8 @@
         {
             if (model.IdEvent != Convert.ToInt32(IdEvent)) return;
 
-            var userSend = this.userCod!.Equals(model.UserCod);
-            var css = userSend ? "message-box-send" : "message-box-receive";
-            var user = userSend ? "Você" : model.User; 
+            var css = ValidateUserReturnsCssMessageBox(model.UserCod);
+            var user = ValidateUserSendReturnsUserName(model.UserCod, model.User);
 
             var userChat = new UserChat(user, model?.Message, model?.Picture, css, model!.SendDate, false);
             messages.Add(userChat);
@@ -376,44 +377,49 @@
     }
 
     [JSInvokable]
-    public void ScrollToTop()
+    public async Task ScrollToTop()
     {
-        // Esta função será chamada do JavaScript quando o scroll atingir o topo
-        // Coloque a lógica que deseja executar aqui
         Console.WriteLine("Usuário rolou para o topo!");
         
-        PreencheMessageTeste();
+        await GetMessagesChat();
     }
 
-    private void PreencheMessageTeste() 
+    private async Task GetMessagesChat() 
     {
-        string[] messagess = {
-            "Olá!",
-            "Como você está?",
-            "Isso parece ótimo!",
-            "Tenha um bom dia!",
-            "Aqui está uma imagem:",
-            "Qual é o clima hoje?",
-            "Isso é incrível!",
-            "Qual é a sua comida favorita?",
-            "Tenha uma boa noite!",
-            "Até logo!"
-        };
+        Console.WriteLine("take: " + this.takeRequestMessages);
 
-        foreach (var messagee in messagess)
+        var responseMessages = await _integrationPartyMapsApiService.GetChatMessages(this.takeRequestMessages, 10);
+
+        if (!responseMessages.Any())
+            return;
+
+
+        foreach (var message in responseMessages.OrderByDescending(x => x.SendDate))
         {
-
-            UserChat userChatt = new UserChat(
-                "Gabriel Maurici",
-                messagee,
-                "https://lh3.googleusercontent.com/a/ACg8ocJ_ghzMMjWfVHv5S5rX9G23QQmseWet__VUYXNqWiGaveyb=s83-c-mo",
-                "message-box-send",
-                DateTime.Now,
+            UserChat userChat = new UserChat(
+                message.User,
+                message.Message,
+                message.Picture,
+                ValidateUserReturnsCssMessageBox(message.UserCod),
+                message.SendDate,
                 false
             );
 
-            messages.Insert(0, userChatt);
+            messages.Insert(0, userChat);
         }
-            StateHasChanged();
+
+        this.takeRequestMessages += 10;
+
+        StateHasChanged();
+    }
+
+    private string ValidateUserReturnsCssMessageBox (string userCod) {
+        var userSend = this.userCod!.Equals(userCod);
+        return userSend ? "message-box-send" : "message-box-receive";
+    }
+
+    private string ValidateUserSendReturnsUserName(string userCod, string userName) {
+        var userSend = this.userCod!.Equals(userCod);
+        return userSend ? "Você" : userName;
     }
 }

@@ -34,8 +34,8 @@
                 var scrollSum = element.clientHeight - element.scrollTop + 1;
 
                 if (scrollSum === element.scrollHeight) {
-                    element.scrollTop = scrollSum;
-                    dotnetHelper.invokeMethodAsync('ScrollToTop');
+                    dotnetHelper.invokeMethodAsync('GetMessages');
+                    element.scrollTop = element.scrollTop + 100;
                 }
             });
         }

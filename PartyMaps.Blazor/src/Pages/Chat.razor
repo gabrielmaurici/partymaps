@@ -377,18 +377,11 @@
     }
 
     [JSInvokable]
-    public async Task ScrollToTop()
-    {
-        Console.WriteLine("Usuário rolou para o topo!");
-        
-        await GetMessagesChat();
-    }
+    public async Task GetMessages() => await GetMessagesChat();
 
     private async Task GetMessagesChat() 
     {
-        Console.WriteLine("take: " + this.takeRequestMessages);
-
-        var responseMessages = await _integrationPartyMapsApiService.GetChatMessages(this.takeRequestMessages, 10);
+        var responseMessages = await _integrationPartyMapsApiService.GetChatMessages(this.takeRequestMessages, 50);
 
         if (!responseMessages.Any())
             return;
@@ -408,7 +401,7 @@
             messages.Insert(0, userChat);
         }
 
-        this.takeRequestMessages += 10;
+        this.takeRequestMessages += 50;
 
         StateHasChanged();
     }

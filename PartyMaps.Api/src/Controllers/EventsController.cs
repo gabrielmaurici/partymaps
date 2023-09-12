@@ -9,12 +9,9 @@ namespace PartyMaps.Api.src.Controllers;
 public class EventsController : ControllerBase
 {
     private readonly IEventService _eventService;
-    private readonly IChatService _chatService;
-
-    public EventsController(IEventService eventService, IChatService chatService)
+    public EventsController(IEventService eventService)
     {
         _eventService = eventService;
-        _chatService = chatService;
     }
 
     [HttpPost]

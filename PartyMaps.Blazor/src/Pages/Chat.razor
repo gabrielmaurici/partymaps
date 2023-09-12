@@ -15,7 +15,7 @@
     <AuthorizeView>
         <Authorized>
             <div class="chat-container">
-                <div class="messages-content">
+                <div id="messages-content" @ref="messagesContentRef" class="messages-content">
                     <div class="messages">
                         @foreach (var message in messages)
                         {
@@ -218,6 +218,8 @@
 @code {
     [Parameter] public string IdEvent { get; set; } = null!;
 
+    private ElementReference messagesContentRef;
+
     private HubConnection? hubConnection;
     private List<UserChat> messages = new List<UserChat>();
     private List<UserTyping> usersTyping = new List<UserTyping>();
@@ -235,7 +237,7 @@
     protected override async Task OnInitializedAsync()
     {
         await GetUserInfo();
-
+        PreencheMessageTeste();
 
         hubConnection = new HubConnectionBuilder()
             .WithUrl("http://localhost:5000/chathub")
@@ -302,6 +304,14 @@
         await NotifyUserEnteringChat();
     }
 
+   protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("addScrollListener", messagesContentRef, DotNetObjectReference.Create(this));
+        }
+    }
+
     private async Task NotifyUserEnteringChat()
     {
         if (hubConnection is not null)
@@ -364,5 +374,46 @@
             await hubConnection.DisposeAsync();
         }
     }
-}
 
+    [JSInvokable]
+    public void ScrollToTop()
+    {
+        // Esta função será chamada do JavaScript quando o scroll atingir o topo
+        // Coloque a lógica que deseja executar aqui
+        Console.WriteLine("Usuário rolou para o topo!");
+        
+        PreencheMessageTeste();
+    }
+
+    private void PreencheMessageTeste() 
+    {
+        string[] messagess = {
+            "Olá!",
+            "Como você está?",
+            "Isso parece ótimo!",
+            "Tenha um bom dia!",
+            "Aqui está uma imagem:",
+            "Qual é o clima hoje?",
+            "Isso é incrível!",
+            "Qual é a sua comida favorita?",
+            "Tenha uma boa noite!",
+            "Até logo!"
+        };
+
+        foreach (var messagee in messagess)
+        {
+
+            UserChat userChatt = new UserChat(
+                "Gabriel Maurici",
+                messagee,
+                "https://lh3.googleusercontent.com/a/ACg8ocJ_ghzMMjWfVHv5S5rX9G23QQmseWet__VUYXNqWiGaveyb=s83-c-mo",
+                "message-box-send",
+                DateTime.Now,
+                false
+            );
+
+            messages.Insert(0, userChatt);
+        }
+            StateHasChanged();
+    }
+}

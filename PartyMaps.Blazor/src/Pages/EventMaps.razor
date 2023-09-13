@@ -1,0 +1,23 @@
+@page "/events"
+
+@inject IJSRuntime JSRuntime
+
+
+<body>
+    <h3>My Google Maps Demo</h3>
+    <div id="map"></div>
+</body>
+
+
+<style>
+    #map {
+    height: 80vh; /* The height is 400 pixels */
+    width: 60%; /* The width is the width of the web page */
+}
+</style>
+
+@code {
+    protected override async Task OnInitializedAsync() {
+        await JSRuntime.InvokeVoidAsync("initMap");
+    }
+}

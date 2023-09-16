@@ -16,12 +16,17 @@ async function initMap() {
         mapId: "DEMO_MAP_ID",
     });
 
-    const advancedMarkerView = new google.maps.marker.AdvancedMarkerView({
+    const { AdvancedMarkerView } = await google.maps.importLibrary("marker");
+
+    const advancedMarkerView = new AdvancedMarkerView({
         map,
         content: buildContent(),
         position: { lat: -25.42101772120352, lng: -49.259524923948334 },
         title: "Red Hot Chili Peppers",
     });
+    
+    CreateSearchBox();
+
 
     var port = window.location.port;
     var domain = window.location.hostname + (port ? ":" + port : "");
@@ -111,6 +116,47 @@ async function initMap() {
     });
 }
 
+function CreateSearchBox() {
+    const input = document.getElementById("pac-input");
+    const searchBox = new google.maps.places.SearchBox(input);
+  
+    map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+    // Bias the SearchBox results towards current map's viewport.
+    map.addListener("bounds_changed", () => {
+        searchBox.setBounds(map.getBounds());
+    });
+  
+  
+    // Listen for the event fired when the user selects a prediction and retrieve
+    // more details for that place.
+    searchBox.addListener("places_changed", () => {
+        const places = searchBox.getPlaces();
+  
+        if (places.length == 0) {
+            return;
+        }
+  
+        // For each place, get the icon, name and location.
+        const bounds = new google.maps.LatLngBounds();
+  
+        places.forEach((place) => {
+            if (!place.geometry || !place.geometry.location) {
+                console.log("Returned place contains no geometry");
+                return;
+            }
+
+            if (place.geometry.viewport) {
+                // Only geocodes have viewport.
+                bounds.union(place.geometry.viewport);
+            } else {
+                bounds.extend(place.geometry.location);
+            }
+        });
+
+        map.fitBounds(bounds);
+    });
+}
+
 function buildContent() {
     const content = document.createElement("div");
   
@@ -122,7 +168,7 @@ function buildContent() {
         <style>
             .map-marker {
                 background-color: #ffff;
-                border: 2px solid #ffff;
+                border: 3px solid #ffff;
                 border-radius: 50%;
             }
 
@@ -130,17 +176,17 @@ function buildContent() {
                 content: ' ';
                 height: 0;
                 width: 0;
-                border: 12px solid transparent;
+                border: 12.5px solid transparent;
                 border-top-color: #ffff;
                 position: absolute;
-                top: 52px;
-                left: 15px;
+                top: 53.4px;
+                left: 16.3px;
             }
         </style>
 
       `;
     return content;
-  }
+}
 
 
 async function GetCurrentPosition() {

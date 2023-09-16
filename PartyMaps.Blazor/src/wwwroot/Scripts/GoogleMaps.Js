@@ -6,7 +6,6 @@ const BRAZIL_COORDINATES = {
 let map;
 
 async function initMap() {
-
     var position = await GetCurrentPosition();
 
     const { Map } = await google.maps.importLibrary("maps");
@@ -17,15 +16,132 @@ async function initMap() {
         mapId: "DEMO_MAP_ID",
     });
 
-    const beachMarker = new google.maps.Marker({
-        position: { lat: -25.42101772120352, lng: -49.259524923948334 },
+    const advancedMarkerView = new google.maps.marker.AdvancedMarkerView({
         map,
-        icon: {
-            url: "https://www.eventim.com.br/campaign/fileadmin/fm_br/campaigns/2023/rhcp/rhcp-mainban-v4.jpg",
-            scaledSize: new google.maps.Size(50, 50),
-        },
-      });
+        content: buildContent(),
+        position: { lat: -25.42101772120352, lng: -49.259524923948334 },
+        title: "Red Hot Chili Peppers",
+    });
+
+    var port = window.location.port;
+    var domain = window.location.hostname + (port ? ":" + port : "");
+
+    const contentString =
+        `<div>
+            <h4>Red Hot Chili Peppers Curitiba</h4>
+        </div>
+        <div class="event-content">
+            <div>
+                <img class="event-image" src="https://www.eventim.com.br/campaign/fileadmin/fm_br/campaigns/2023/rhcp/rhcp-mainban-v4.jpg" />
+            </div>
+            <div class="event-details">
+                <div>
+                    <h6>Descricao</h6>
+                    <p>O show do Red Hot Chili Peppers promete ser uma explosão de energia e música envolvente. Prepare-se para ser cativado por hits icônicos da banda, uma performance cheia de paixão e uma atmosfera eletrizante que certamente aquecerá sua noite de novembro. Não perca a oportunidade de vivenciar a lendária fusão de rock e funk do Red Hot Chili Peppers ao vivo neste evento imperdível.</p>
+                </div>
+                <div>
+                    <h6>Preço</h6> <p>R$960,00
+                </div>
+                <div>
+                    <h6>Data</h6> <p>13/11/2023
+                </div>
+                <div>
+                    <h6>Horário</h6> <p>16:00
+                </div>
+                <div>
+                    <a class="button" href=http://${domain}/chat/1>Entrar no chat do evento</a>
+                </div>
+            </div>
+        </div>
+
+
+        <style>
+            p { 
+                font-size: 13.5px; 
+            }
+
+            .event-content {
+                display: flex;
+                justify-content: space-between
+
+                height: 100%;
+                align-items: center;
+            }
+
+            .event-image {
+                height: 400px;
+                margin-right: 15px;
+            }
+
+            .event-details {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                height: 400px;
+            }
+
+            .button {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #231455;
+                color: #FFFFFF;
+                text-decoration: none;
+                border: 1px solid #231455;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+
+            .button:hover {
+                color: #231455;
+                background-color: #FFFFFF;
+            }
+        </style>`
+    ;
+
+    const infowindow = new google.maps.InfoWindow({
+        content: contentString,
+        ariaLabel: "Red Hot Chili Peppers",
+    });
+
+    advancedMarkerView.addListener("click", () => {
+        infowindow.open({
+            anchor: advancedMarkerView,
+            map,
+        });
+    });
 }
+
+function buildContent() {
+    const content = document.createElement("div");
+  
+    content.classList.add("property");
+    content.innerHTML = `
+        <div class="map-marker">
+            <img style="height: 50px; width: 50px; border-radius: 50%;" src="https://www.eventim.com.br/campaign/fileadmin/fm_br/campaigns/2023/rhcp/rhcp-mainban-v4.jpg" >
+        </div>
+        <style>
+            .map-marker {
+                background-color: #ffff;
+                border: 2px solid #ffff;
+                border-radius: 50%;
+            }
+
+            .map-marker::before {
+                content: ' ';
+                height: 0;
+                width: 0;
+                border: 12px solid transparent;
+                border-top-color: #ffff;
+                position: absolute;
+                top: 52px;
+                left: 15px;
+            }
+        </style>
+
+      `;
+    return content;
+  }
+
 
 async function GetCurrentPosition() {
     return new Promise((resolve, reject) => {
@@ -69,4 +185,4 @@ async function GetCurrentPosition() {
     })
 }
 
-initMap();
+window.initMap = initMap

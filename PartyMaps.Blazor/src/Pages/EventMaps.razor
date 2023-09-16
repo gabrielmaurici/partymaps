@@ -3,16 +3,25 @@
 @inject IJSRuntime JSRuntime
 
 
-<body>
-    <h3>Eventos</h3>
+<h3>Eventos</h3>
+<div class="google-map">
     <div id="map"></div>
-</body>
+</div>
 
 
 <style>
+    .google-map {
+        height: 100%;
+        width: 100%;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
     #map {
     height: 80vh;
-    width: 80%;
+    width: 100%;
 }
 </style>
 
